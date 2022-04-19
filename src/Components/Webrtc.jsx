@@ -19,9 +19,6 @@ function Webrtc(props) {
             marginTop: '50px'
         }}>
             <Grid container spacing={2} justify="center" textAlign="center" align="center">
-                {/* <Grid item xs={12}>
-                    <p>Webrtc Trial</p>
-                </Grid> */}
                 <Grid item xs={3}/>
                 <Grid item xs={3}>
                     <p>Is Video Recieve on?</p>
