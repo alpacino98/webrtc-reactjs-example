@@ -29,3 +29,7 @@ export const createOffer = async function (isVideo, setOffer) {
         console.log(`Failed to create offer: ${e}`);
     }
 }
+
+export const setAnswer = async function(){
+    
+}

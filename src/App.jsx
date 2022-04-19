@@ -6,6 +6,8 @@ import ButtonAppBar from './Components/Appbar'
 
 function App() {
 
+    console.log(import.meta.env.VITE_APP_NOT_SECRET_CODE ? import.meta.env.VITE_APP_NOT_SECRET_CODE : null)
+
     return (
         <WebrtcProvider>
             <div className="App">
