@@ -1,18 +1,33 @@
-import React, {Component, useContext, useState} from 'react';
+import React, {useEffect, useContext, useState} from 'react';
 import {WebrtcContext} from '../Context/WebrtcContext/webrtc-context';
 import {Button, Checkbox, Grid, TextField} from '@mui/material'
-import {createOffer} from '../scripts/webrtc-create-offer';
+import {createOffer,SingeltonPeer, processAnswer} from '../scripts/webrtc-create-offer';
+import { styled } from '@mui/material/styles';
 
 function Webrtc(props) {
 
-    const {offer, setOffer, isVideo, setIsVideo} = useContext(WebrtcContext)
+    const {offer, setOffer, isVideo, setIsVideo, peerConnection, setPeerConnection} = useContext(WebrtcContext)
     const [showOffer,
         setShowOffer] = useState(false);
+    const [status, setStatus] = useState('');
+    const [answer, setAnswer] = useState('');
+
+    useEffect(() => {
+        setPeerConnection(SingeltonPeer.getInstance())
+    },[])
 
     async function clickHandler(event) {
         event.preventDefault();
-        await createOffer(isVideo, setOffer)
+        setPeerConnection(await createOffer(isVideo, setOffer, status, setStatus, peerConnection))
+        const answerBody = await processAnswer(offer)
+        setAnswer(answerBody)
     }
+
+    const Div = styled('div')(({ theme }) => ({
+        ...theme.typography.button,
+        backgroundColor: theme.palette.background.paper,
+        padding: theme.spacing(1),
+      }));
 
     return (
         <div style={{
@@ -53,7 +68,7 @@ function Webrtc(props) {
                             <TextField
                                 label="Offer"
                                 disabled={true}
-                                value={offer}
+                                value={offer.sdp}
                                 multiline
                                 rows={8}
                                 defaultValue="Offer"/>
@@ -61,6 +76,13 @@ function Webrtc(props) {
                     : <Grid item xs={6}/>
                 }
                 <Grid item xs={3}/>
+                <Grid item xs={4}>
+                </Grid>
+                <Grid item xs={4}>
+                    <Div>{answer}</Div>
+                </Grid>
+                <Grid item xs={4}>
+                </Grid>
             </Grid>
         </div>
     );
