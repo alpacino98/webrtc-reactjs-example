@@ -1,95 +1,102 @@
-export const createOffer = async function (
-  isVideo,
-  setOffer,
-  status,
-  setStatus,
-  peerConnection
-) {
-  const numRequestedAudioTracks = parseInt(1);
-
-  for (let i = 0; i < numRequestedAudioTracks; i++) {
-    const acx = new AudioContext();
-    const dst = acx.createMediaStreamDestination();
-
-    const track = dst.stream.getTracks()[0];
-    peerConnection.addTrack(track, dst.stream);
-  }
+export const createOffer = async function (isVideo, status, setStatus) {
+  let pc = SingeltonPeer.getInstance();
 
   const offerOptions = {
     offerToReceiveAudio: 0,
     offerToReceiveVideo: isVideo ? 1 : 0,
-    iceRestart: true,
-    voiceActivityDetection: false,
   };
 
-  peerConnection.addEventListener(
+  // let negotiating = false;
+  // pc.onnegotiationneeded = async e => {
+  //   try {
+  //     if (negotiating || pc.signalingState != "stable") return;
+  //     negotiating = true;
+  //     /* Your async/await-using code goes here */
+  //   } finally {
+  //     negotiating = false;
+  //   }
+  // }
+
+  pc.addEventListener(
     "icegatheringstatechange",
     function () {
       var statusHolder = status;
-      setStatus(
-        statusHolder + " -> " + peerConnection.iceGatheringState + "\n"
-      );
+      setStatus(statusHolder + " -> " + pc.iceGatheringState + "\n");
     },
     false
   );
 
-  peerConnection.addEventListener(
+  pc.oniceconnectionstatechange = (e) => log(pc.iceConnectionState);
+  pc.onicecandidate = (event) => {
+    // console.log(event)
+    if (event.candidate === null) {
+    }
+  };
+
+  pc.addEventListener(
     "iceconnectionstatechange",
     function () {
       var statusHolder = status;
-      setStatus(
-        statusHolder + " -> " + peerConnection.iceConnectionState + "\n"
-      );
+      setStatus(statusHolder + " -> " + pc.iceConnectionState + "\n");
     },
     false
   );
 
-  peerConnection.addEventListener(
+  pc.addEventListener(
     "signalingstatechange",
     function () {
       var statusHolder = status;
-      setStatus(statusHolder + " -> " + peerConnection.signalingState + "\n");
+      setStatus(statusHolder + " -> " + pc.signalingState + "\n");
     },
     false
   );
 
-  peerConnection.addTransceiver('video', {'direction': 'recvonly'})
+  pc.addTransceiver("video", { direction: "recvonly" });
+
+  let offer;
 
   try {
-    const offer = await peerConnection.createOffer(offerOptions);
-    await peerConnection.setLocalDescription(offer)
-    await new Promise(function(resolve) {
-            if (peerConnection.iceGatheringState === 'complete') {
-                resolve();
-            } else {
-                function checkState() {
-                    if (peerConnection.iceGatheringState === 'complete') {
-                        peerConnection.removeEventListener('icegatheringstatechange', checkState);
-                        resolve();
-                    }
-                }
-                peerConnection.addEventListener('icegatheringstatechange', checkState);
-            }
-        });
-    setOffer(offer);
+    offer = await pc.createOffer(offerOptions);
+    await pc.setLocalDescription(offer);
+    await new Promise(function (resolve) {
+      if (pc.iceGatheringState === "complete") {
+        resolve();
+      } else {
+        function checkState() {
+          if (pc.iceGatheringState === "complete") {
+            pc.removeEventListener("icegatheringstatechange", checkState);
+            resolve();
+          }
+        }
+        pc.addEventListener("icegatheringstatechange", checkState);
+      }
+    });
   } catch (e) {
     console.log(`Failed to create offer: ${e}`);
   }
-  return peerConnection;
+
+  pc.onicecanidate = (event) => {
+    console.log(event.canidate);
+  };
+
+  console.log("pc");
+  console.log(pc);
+
+  return pc, offer;
 };
 
 export const processAnswer = async function (offer) {
-    console.log(offer)
   const offerResponse = await fetch("http://localhost:3001/webrtc/offer", {
     body: JSON.stringify({
-      "sdp": offer.sdp,
-      "type": offer.type,
+      sdp: offer.sdp,
+      type: offer.type,
     }),
     headers: {
       "Content-Type": "application/json",
     },
     method: "POST",
   });
+  console.log(offerResponse.body);
   return offerResponse.body;
 };
 
@@ -98,9 +105,9 @@ export const SingeltonPeer = (function () {
 
   function createInstance() {
     var config = {
-        sdpSemantics: 'unified-plan'
+      sdpSemantics: "unified-plan",
     };
-    config.iceServers = [{urls: ['stun:stun.l.google.com:19302']}];
+    config.iceServers = [{ urls: ["stun:stun.l.google.com:19302"] }];
     var object = new RTCPeerConnection(config);
     return object;
   }
@@ -110,7 +117,8 @@ export const SingeltonPeer = (function () {
       if (!instance) {
         instance = createInstance();
       }
-      return instance;
+      // return instance;
+      return createInstance();
     },
   };
 })();

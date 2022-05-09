@@ -11,8 +11,8 @@ function App() {
     return (
         <WebrtcProvider>
             <div className="App">
-              <ButtonAppBar />
-               <Webrtc />
+            <ButtonAppBar />
+            <Webrtc />
             </div>
         </WebrtcProvider>
     )

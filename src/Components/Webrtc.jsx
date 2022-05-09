@@ -13,13 +13,19 @@ function Webrtc(props) {
     const [answer, setAnswer] = useState('');
 
     useEffect(() => {
-        setPeerConnection(SingeltonPeer.getInstance())
+        
     },[])
 
     async function clickHandler(event) {
         event.preventDefault();
-        setPeerConnection(await createOffer(isVideo, setOffer, status, setStatus, peerConnection))
-        const answerBody = await processAnswer(offer)
+        setPeerConnection(SingeltonPeer.getInstance())
+        let pc, offerCreated
+        pc, offerCreated = await createOffer(isVideo, status, setStatus)
+        console.log(pc)
+        setPeerConnection(pc)
+        setOffer(offerCreated)
+        // console.log(offerCreated)
+        const answerBody = await processAnswer(offerCreated)
         setAnswer(answerBody)
     }
 
@@ -63,9 +69,10 @@ function Webrtc(props) {
                         await clickHandler(event)
                     }}>Creat Offer</Button>
                 </Grid>
-                <Grid item xs={3}/> {showOffer
-                    ? <Grid item xs={6}>
+                <Grid item xs={2}/> {showOffer
+                    ? <Grid item xs={8}>
                             <TextField
+                                style={{'width':'100%'}}
                                 label="Offer"
                                 disabled={true}
                                 value={offer.sdp}
@@ -73,13 +80,13 @@ function Webrtc(props) {
                                 rows={8}
                                 defaultValue="Offer"/>
                         </Grid>
-                    : <Grid item xs={6}/>
+                    : <Grid item xs={2}/>
                 }
                 <Grid item xs={3}/>
                 <Grid item xs={4}>
                 </Grid>
                 <Grid item xs={4}>
-                    <Div>{answer}</Div>
+                    {/* <Div>{answer}</Div> */}
                 </Grid>
                 <Grid item xs={4}>
                 </Grid>
