@@ -11,7 +11,14 @@ export function WebrtcProvider(props) {
   const [isVideo, setIsVideo] = useState(false);
   const [offer, setOffer] = useState("");
   const [answer, setAnswer] = useState("");
-  const [peerConnection, setPeerConnection] = useState(new RTCPeerConnection());
+  const [peerConnection, setPeerConnection] = useState(new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302",
+      },
+    ],
+  }));
+  const [userId, setUsedId] = useState("")
 
   return (
     <WebrtcContext.Provider

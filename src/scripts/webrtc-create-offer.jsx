@@ -1,3 +1,57 @@
+export const createAnswer = async function(peerConnection, offer){
+  peerConnection.addEventListener(
+    "icegatheringstatechange",
+    function () {
+      var statusHolder = status;
+      setStatus(statusHolder + " -> " + peerConnection.iceGatheringState + "\n");
+    },
+    false
+  );
+
+  peerConnection.oniceconnectionstatechange = (e) => log(peerConnection.iceConnectionState);
+  peerConnection.onicecandidate = (event) => {
+    // console.log(event)
+    if (event.candidate === null) {
+    }
+  };
+
+  peerConnection.addEventListener(
+    "iceconnectionstatechange",
+    function () {
+      var statusHolder = status;
+      setStatus(statusHolder + " -> " + peerConnection.iceConnectionState + "\n");
+    },
+    false
+  );
+
+  peerConnection.addEventListener(
+    "signalingstatechange",
+    function () {
+      var statusHolder = status;
+      setStatus(statusHolder + " -> " + peerConnection.signalingState + "\n");
+    },
+    false
+  );
+
+  peerConnection.addTransceiver("video", { direction: "recvonly" });
+  peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+  answer = peerConnection.createAnswer()
+
+  return answer
+
+}
+
+export const getOffer = async function(status, setStatus) {
+  const offerResponse = await fetch("http://localhost:3001/webrtc/get-offer", {
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "GET",
+  });
+  return offerResponse.json();
+}
+
 export const createOffer = async function (isVideo, status, setStatus) {
   let pc = SingeltonPeer.getInstance();
 
@@ -79,10 +133,7 @@ export const createOffer = async function (isVideo, status, setStatus) {
     console.log(event.canidate);
   };
 
-  console.log("pc");
-  console.log(pc);
-
-  return pc, offer;
+  return [pc, offer]
 };
 
 export const processAnswer = async function (offer) {
@@ -96,8 +147,7 @@ export const processAnswer = async function (offer) {
     },
     method: "POST",
   });
-  console.log(offerResponse.body);
-  return offerResponse.body;
+  return offerResponse.json();
 };
 
 export const SingeltonPeer = (function () {
