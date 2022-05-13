@@ -84,6 +84,7 @@ export const createOffer = async function (isVideo, status, setStatus) {
   pc.onicecandidate = (event) => {
     // console.log(event)
     if (event.candidate === null) {
+      pc.addIceCandidate(event.candidate)
     }
   };
 
@@ -149,6 +150,36 @@ export const processAnswer = async function (offer) {
   });
   return offerResponse.json();
 };
+
+export const playVideo = async function (user_id) {
+  const playResponse = await fetch("http://localhost:3001/webrtc/play", {
+    body: JSON.stringify({
+      id: user_id,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    method: "POST",
+  });
+  return playResponse.json();
+};
+
+export const setAnswerRecieved = async function(answer, peerConnection) {
+  const answerDescription = new RTCSessionDescription(answer)
+  peerConnection.setRemoteDescription(answerDescription)
+
+  peerConnection.ontrack = (event) => {
+    console.log("Got track event", event);
+    let video = document.createElement("video");
+    video.srcObject = event.streams[0];
+    video.autoplay = true;
+    video.width = "500";
+    let label = document.createElement("div");
+    label.textContent = event.streams[0].id;
+    document.getElementById("serverVideos").appendChild(label);
+    document.getElementById("serverVideos").appendChild(video);
+  };
+}
 
 export const SingeltonPeer = (function () {
   var instance;

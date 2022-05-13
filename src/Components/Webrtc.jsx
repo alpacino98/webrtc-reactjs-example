@@ -1,7 +1,7 @@
 import React, {useEffect, useContext, useState} from 'react';
 import {WebrtcContext} from '../Context/WebrtcContext/webrtc-context';
 import {Button, Checkbox, Grid, TextField} from '@mui/material'
-import { createAnswer, getOffer, createOffer,SingeltonPeer, processAnswer} from '../scripts/webrtc-create-offer';
+import { setAnswerRecieved, createOffer,SingeltonPeer, processAnswer, playVideo} from '../scripts/webrtc-create-offer';
 import { styled } from '@mui/material/styles';
 
 function Webrtc(props) {
@@ -15,25 +15,21 @@ function Webrtc(props) {
     useEffect(() => {
     },[])
 
-    async function clickAnswerCreate(event){
-        event.preventDefault();
+    // async function clickAnswerCreate(event){
+    //     event.preventDefault();
 
-        const offerResp = await createAnswer(peerConnection, offer, setOffer, setPeerConnection)
-        setOffer(offerResp)
-    }
+    //     const offerResp = await createAnswer(peerConnection, offer, setOffer, setPeerConnection)
+    //     setOffer(offerResp)
+    // }
 
-    async function clickHandlerGetOffer(event) {
-        event.preventDefault();
-        // setPeerConnection(SingeltonPeer.getInstance())
-        // let pc, offerCreated
-        const offerResp = await getOffer(isVideo, status, setStatus)
-        console.log(offerResp.client_id)
-        // setPeerConnection(pc)
-        setOffer(offerResp)
-        // console.log(offerCreated)
-        // const answerBody = await processAnswer(offerCreated)
-        // setAnswer(answerBody)
-    }
+    // async function clickHandlerGetOffer(event) {
+    //     event.preventDefault();
+    //     // setPeerConnection(SingeltonPeer.getInstance())
+    //     // let pc, offerCreated
+    //     const offerResp = await getOffer(isVideo, status, setStatus)
+    //     console.log(offerResp.client_id)
+    //     setOffer(offerResp)
+    // }
 
     async function clickOfferHandler(event) {
         event.preventDefault();
@@ -45,8 +41,17 @@ function Webrtc(props) {
         setPeerConnection(pc)
         setOffer(offerCreated)
         const answerBody = await processAnswer(offerCreated)
-        console.log(answerBody)
-        setAnswer(answerBody)
+        setUsedId(answerBody.data.user_id)
+        setAnswer(answerBody.data.answer)
+        setAnswerRecieved(answerBody.data.answer, peerConnection)
+    }
+
+    async function clickPlayHandler(event){
+        event.preventDefault();
+        const user_id = userId
+        const playResponseJson = await playVideo(user_id)
+        console.log(playResponseJson)
+
     }
 
     const Div = styled('div')(({ theme }) => ({
@@ -93,8 +98,8 @@ function Webrtc(props) {
                     <Button
                         variant="contained"
                         onClick={async(event) => {
-                        await clickHandlerGetOffer(event)
-                    }}>Get Offer</Button>
+                        await clickPlayHandler(event)
+                    }}>Play Video</Button>
                 </Grid>
                 <Grid item xs={2}/> {showOffer
                     ? <Grid item xs={8}>
@@ -116,6 +121,11 @@ function Webrtc(props) {
                     {/* <Div>{answer}</Div> */}
                 </Grid>
                 <Grid item xs={4}>
+                </Grid>
+                <Grid item xs={12}>
+                    <div id="serverVideos">
+                        Video from server<br />
+                    </div>
                 </Grid>
             </Grid>
         </div>
