@@ -19,6 +19,7 @@ export function WebrtcProvider(props) {
     ],
   }));
   const [userId, setUsedId] = useState("")
+  const [iceCanidates, setIceCanidates] = useState([])
 
   return (
     <WebrtcContext.Provider
@@ -32,7 +33,9 @@ export function WebrtcProvider(props) {
         peerConnection,
         setPeerConnection,
         userId,
-        setUsedId
+        setUsedId,
+        iceCanidates,
+        setIceCanidates
       }}
     >
       {props.children}

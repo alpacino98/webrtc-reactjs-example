@@ -1,19 +1,20 @@
 import React, {useEffect, useContext, useState} from 'react';
 import {WebrtcContext} from '../Context/WebrtcContext/webrtc-context';
 import {Button, Checkbox, Grid, TextField} from '@mui/material'
-import { setAnswerRecieved, createOffer,SingeltonPeer, processAnswer, playVideo} from '../scripts/webrtc-create-offer';
+import { processAnswerRecieved, createOffer,SingeltonPeer, processAnswer, playVideo} from '../scripts/webrtc-create-offer';
 import { styled } from '@mui/material/styles';
 
 function Webrtc(props) {
 
-    const {offer, setOffer, isVideo, setIsVideo, peerConnection, setPeerConnection, userId, setUsedId} = useContext(WebrtcContext)
+    const {offer, setOffer, isVideo, setIsVideo, peerConnection, setPeerConnection, userId, setUsedId, iceCanidates, setIceCanidates} = useContext(WebrtcContext)
     const [showOffer,
         setShowOffer] = useState(false);
     const [status, setStatus] = useState('');
     const [answer, setAnswer] = useState('');
 
     useEffect(() => {
-    },[])
+        console.log(iceCanidates)
+    },[iceCanidates])
 
     // async function clickAnswerCreate(event){
     //     event.preventDefault();
@@ -34,16 +35,19 @@ function Webrtc(props) {
     async function clickOfferHandler(event) {
         event.preventDefault();
         setPeerConnection(SingeltonPeer.getInstance())
-        let offerRet = await createOffer(isVideo, status, setStatus)
-        const pc = offerRet[0]
+        let offerRet = await createOffer(isVideo, status, setStatus, iceCanidates, setIceCanidates)
+        let pc = offerRet[0]
         const offerCreated = offerRet[1]
-
-        setPeerConnection(pc)
         setOffer(offerCreated)
         const answerBody = await processAnswer(offerCreated)
+        // peerConnection.startIce()
         setUsedId(answerBody.data.user_id)
         setAnswer(answerBody.data.answer)
-        setAnswerRecieved(answerBody.data.answer, peerConnection)
+        console.log("answerBody.data.answer")
+        console.log(answerBody.data.answer)
+        pc = await processAnswerRecieved(answerBody.data.answer, pc)
+
+        setPeerConnection(pc)
     }
 
     async function clickPlayHandler(event){
