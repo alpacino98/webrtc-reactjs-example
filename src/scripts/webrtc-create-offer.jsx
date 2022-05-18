@@ -1,73 +1,12 @@
-// export const createAnswer = async function (peerConnection, offer) {
-//   peerConnection.addEventListener(
-//     "icegatheringstatechange",
-//     function () {
-//       var statusHolder = status;
-//       setStatus(
-//         statusHolder + " -> " + peerConnection.iceGatheringState + "\n"
-//       );
-//     },
-//     false
-//   );
+import { ConstructionOutlined } from "@mui/icons-material";
 
-//   peerConnection.oniceconnectionstatechange = (e) =>
-//     log(peerConnection.iceConnectionState);
-//   peerConnection.onicecandidate = (event) => {
-//     // console.log(event)
-//     if (event.candidate !== null) {
-//       console.log(event)
-//     }
-//   };
-
-//   peerConnection.addEventListener(
-//     "iceconnectionstatechange",
-//     function () {
-//       var statusHolder = status;
-//       setStatus(
-//         statusHolder + " -> " + peerConnection.iceConnectionState + "\n"
-//       );
-//     },
-//     false
-//   );
-
-//   peerConnection.addEventListener(
-//     "signalingstatechange",
-//     function () {
-//       var statusHolder = status;
-//       setStatus(statusHolder + " -> " + peerConnection.signalingState + "\n");
-//     },
-//     false
-//   );
-
-//   peerConnection.addTransceiver("video", { direction: "recvonly" });
-//   peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-//   answer = peerConnection.createAnswer();
-
-//   return answer;
-// };
-
-export const sendCanidate = async function(canidate){
-  const offerResponse = await fetch("http://localhost:3001/webrtc/get-offer", {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "GET",
-  });
-  return offerResponse.json();
-}
-
-export const getOffer = async function (status, setStatus) {
-  const offerResponse = await fetch("http://localhost:3001/webrtc/get-offer", {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    method: "GET",
-  });
-  return offerResponse.json();
-};
-
-export const createOffer = async function (isVideo, status, setStatus, iceCanidates, setIceCanidates) {
+export const createOffer = async function (
+  isVideo,
+  status,
+  setStatus,
+  iceCanidates,
+  setIceCanidates
+) {
   let pc = SingeltonPeer.getInstance();
 
   const offerOptions = {
@@ -76,7 +15,7 @@ export const createOffer = async function (isVideo, status, setStatus, iceCanida
   };
 
   let negotiating = false;
-  pc.onnegotiationneeded = async e => {
+  pc.onnegotiationneeded = async (e) => {
     try {
       if (negotiating || pc.signalingState != "stable") return;
       negotiating = true;
@@ -84,7 +23,7 @@ export const createOffer = async function (isVideo, status, setStatus, iceCanida
     } finally {
       negotiating = false;
     }
-  }
+  };
 
   pc.addEventListener(
     "icegatheringstatechange",
@@ -95,30 +34,22 @@ export const createOffer = async function (isVideo, status, setStatus, iceCanida
     false
   );
 
-  pc.oniceconnectionstatechange = (e) => log(pc.iceConnectionState);
+  pc.oniceconnectionstatechange = (e) => console.log(pc.iceConnectionState);
+
   pc.onicecandidate = (event) => {
     if (event.candidate !== null) {
-      console.log(event.candidate)
-      let iceHolder = iceCanidates
-      iceHolder.push(event.candidate)
-      setIceCanidates([...iceHolder])
+      console.log(event.candidate);
+      let iceHolder = iceCanidates;
+      iceHolder.push(event.candidate);
+      setIceCanidates([...iceHolder]);
     }
   };
-
-  pc.addEventListener(
-    "iceconnectionstatechange",
-    function () {
-      var statusHolder = status;
-      setStatus(statusHolder + " -> " + pc.iceConnectionState + "\n");
-    },
-    false
-  );
 
   pc.addEventListener(
     "signalingstatechange",
     function () {
       var statusHolder = status;
-      setStatus(statusHolder + " -> " + pc.signalingState + "\n");
+      console.log(" -> " + pc.signalingState + "\n");
     },
     false
   );
@@ -154,7 +85,7 @@ export const createOffer = async function (isVideo, status, setStatus, iceCanida
   return [pc, offer];
 };
 
-export const processAnswer = async function (offer) {
+export const sendOffer = async function (offer) {
   const offerResponse = await fetch("http://localhost:3001/webrtc/offer", {
     body: JSON.stringify({
       sdp: offer.sdp,
@@ -166,6 +97,24 @@ export const processAnswer = async function (offer) {
     method: "POST",
   });
   return offerResponse.json();
+};
+
+export const sendCanidates = async function (canidates, user_id) {
+  const canidatesResponse = await fetch(
+    "http://localhost:3001/webrtc/register-icecanidates",
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ice_canidates: canidates,
+        user_id: user_id,
+      }),
+      method: "POST",
+    }
+  );
+
+  return canidatesResponse.json();
 };
 
 export const playVideo = async function (user_id) {
@@ -183,21 +132,25 @@ export const playVideo = async function (user_id) {
 
 export const processAnswerRecieved = async function (answer, peerConnection) {
   const answerDescription = new RTCSessionDescription(answer);
-  console.log("answerDescription")
-  console.log(answerDescription)
+  console.log("answerDescription");
+  console.log(answerDescription);
+  let videoElement = document.getElementById("webrtc-video");
+  let remoteStream = new MediaStream();
+
   peerConnection.setRemoteDescription(answerDescription);
 
   peerConnection.ontrack = (event) => {
     console.log("Got track event", event);
-    let video = document.createElement("video");
-    video.srcObject = event.streams[0];
-    video.autoplay = true;
-    video.width = "500";
-    let label = document.createElement("div");
-    label.textContent = event.streams[0].id;
-    document.getElementById("serverVideos").appendChild(label);
-    document.getElementById("serverVideos").appendChild(video);
+    event.streams[0].getTracks().forEach((track) => {
+      console.log("Track");
+      console.log(track);
+      remoteStream.addTrack(track);
+    });
   };
+
+  videoElement.srcObject = remoteStream;
+  videoElement.autoplay = true;
+  videoElement.width = "500";
 
   return peerConnection;
 };

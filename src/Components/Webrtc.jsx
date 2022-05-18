@@ -1,7 +1,7 @@
 import React, {useEffect, useContext, useState} from 'react';
 import {WebrtcContext} from '../Context/WebrtcContext/webrtc-context';
 import {Button, Checkbox, Grid, TextField} from '@mui/material'
-import { processAnswerRecieved, createOffer,SingeltonPeer, processAnswer, playVideo} from '../scripts/webrtc-create-offer';
+import { processAnswerRecieved, createOffer,SingeltonPeer, sendOffer, playVideo, sendCanidates} from '../scripts/webrtc-create-offer';
 import { styled } from '@mui/material/styles';
 
 function Webrtc(props) {
@@ -12,25 +12,21 @@ function Webrtc(props) {
     const [status, setStatus] = useState('');
     const [answer, setAnswer] = useState('');
 
-    useEffect(() => {
-        console.log(iceCanidates)
-    },[iceCanidates])
-
-    // async function clickAnswerCreate(event){
-    //     event.preventDefault();
-
-    //     const offerResp = await createAnswer(peerConnection, offer, setOffer, setPeerConnection)
-    //     setOffer(offerResp)
-    // }
-
-    // async function clickHandlerGetOffer(event) {
-    //     event.preventDefault();
-    //     // setPeerConnection(SingeltonPeer.getInstance())
-    //     // let pc, offerCreated
-    //     const offerResp = await getOffer(isVideo, status, setStatus)
-    //     console.log(offerResp.client_id)
-    //     setOffer(offerResp)
-    // }
+    // useEffect(() => {
+    //     console.log("peerConnection use effect")
+    //     console.log(peerConnection)
+    //     peerConnection.ontrack = (event) => {
+    //         console.log("Got track event", event);
+    //         let video = document.createElement("video");
+    //         video.srcObject = event.streams[0];
+    //         video.autoplay = true;
+    //         video.width = "500";
+    //         let label = document.createElement("div");
+    //         label.textContent = event.streams[0].id;
+    //         document.getElementById("serverVideos").appendChild(label);
+    //         document.getElementById("serverVideos").appendChild(video);
+    //     };
+    // },[peerConnection])
 
     async function clickOfferHandler(event) {
         event.preventDefault();
@@ -39,12 +35,9 @@ function Webrtc(props) {
         let pc = offerRet[0]
         const offerCreated = offerRet[1]
         setOffer(offerCreated)
-        const answerBody = await processAnswer(offerCreated)
-        // peerConnection.startIce()
+        const answerBody = await sendOffer(offerCreated)
         setUsedId(answerBody.data.user_id)
         setAnswer(answerBody.data.answer)
-        console.log("answerBody.data.answer")
-        console.log(answerBody.data.answer)
         pc = await processAnswerRecieved(answerBody.data.answer, pc)
 
         setPeerConnection(pc)
@@ -55,7 +48,22 @@ function Webrtc(props) {
         const user_id = userId
         const playResponseJson = await playVideo(user_id)
         console.log(playResponseJson)
+    }
 
+    async function clickSendIceCanidatesHandler(event){
+        event.preventDefault();
+        const user_id = userId;
+        console.log("iceCanidates, user_id")
+        console.log(iceCanidates, user_id)
+        const canidatesResponse = await sendCanidates(iceCanidates, user_id)
+        console.log(canidatesResponse)
+        let pc = peerConnection
+        if (canidatesResponse.status == "successful"){
+            for(let i = 0; i < canidatesResponse.ice_canidates.length; i++){
+                pc.addIceCandidate(canidatesResponse.ice_canidates[i]);
+            }
+        }
+        setPeerConnection(pc)
     }
 
     const Div = styled('div')(({ theme }) => ({
@@ -69,6 +77,7 @@ function Webrtc(props) {
             marginTop: '50px'
         }}>
             <Grid container spacing={2} justify="center" textAlign="center" align="center">
+                {/* Row 1 */}
                 <Grid item xs={3}/>
                 <Grid item xs={3}>
                     <p>Is Video Recieve on?</p>
@@ -80,6 +89,7 @@ function Webrtc(props) {
                     }}/>
                 </Grid>
                 <Grid item xs={3}/>
+                {/* Row 2 */}
                 <Grid item xs={3}/>
                 <Grid item xs={3}>
                     <p>Show/Hide offer</p>
@@ -91,6 +101,7 @@ function Webrtc(props) {
                     }}/>
                 </Grid>
                 <Grid item xs={3}/>
+                {/* Row 3 */}
                 <Grid item xs={12}>
                     <Button
                         variant="contained"
@@ -98,14 +109,17 @@ function Webrtc(props) {
                         await clickOfferHandler(event)
                     }}>Creat Offer</Button>
                 </Grid>
+                {/* Row 4 */}
                 <Grid item xs={12}>
                     <Button
                         variant="contained"
                         onClick={async(event) => {
-                        await clickPlayHandler(event)
-                    }}>Play Video</Button>
+                        await clickSendIceCanidatesHandler(event)
+                    }}>Send Ice Canidates</Button>
                 </Grid>
-                <Grid item xs={2}/> {showOffer
+                {/* Row 5 */}
+                <Grid item xs={2}/>
+                {showOffer
                     ? <Grid item xs={8}>
                             <TextField
                                 style={{'width':'100%'}}
@@ -116,21 +130,41 @@ function Webrtc(props) {
                                 rows={8}
                                 defaultValue="Offer"/>
                         </Grid>
-                    : <Grid item xs={2}/>
+                    : <Grid item xs={8}/>
                 }
-                <Grid item xs={3}/>
-                <Grid item xs={4}>
+                <Grid item xs={2}/>
+                {/* Row 6 */}
+                <Grid item xs={2} />
+                    {answer.sdp ?
+                        <Grid item xs={8}>
+                        <TextField
+                        style={{'width':'100%'}}
+                        label="Answer"
+                        disabled={true}
+                        value={answer.sdp}
+                        multiline
+                        rows={8}
+                        defaultValue="Offer"/>
+                        </Grid>
+                        : <Grid item xs={8} />}
+                <Grid item xs={2} />
+                {/* Row 7 */}
+                <Grid item xs={12}>
+                    <Button
+                        variant="contained"
+                        onClick={async(event) => {
+                        await clickPlayHandler(event)
+                    }}>Play Video</Button>
                 </Grid>
-                <Grid item xs={4}>
-                    {/* <Div>{answer}</Div> */}
-                </Grid>
-                <Grid item xs={4}>
-                </Grid>
+                {/* Row 8 */}
                 <Grid item xs={12}>
                     <div id="serverVideos">
-                        Video from server<br />
+                        Video from server
+                        <br />
+                        <video id="webrtc-video" ></video>
                     </div>
                 </Grid>
+                {/* Row 8 */}
             </Grid>
         </div>
     );
